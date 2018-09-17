@@ -32,9 +32,9 @@ class CamObj:
         # filename should be provided in the form of fname.avi
         beginCap = cv2.VideoCapture(camIndex)
         if needRet:
-            vidWriter = cv2.VideoWriter_fourcc(*'DIVX')
+            vidWriter = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
             outputDestination = cv2.VideoWriter(filename, vidWriter,
-                                                40, (500, 500))
+                                                60.0, (640, 480))
         while True:
             check, frames = beginCap.read()
             if show:
@@ -45,6 +45,8 @@ class CamObj:
                 break
 
         beginCap.release()
+        if needRet:
+            outputDestination.release()
         cv2.destroyAllWindows()
 
 
