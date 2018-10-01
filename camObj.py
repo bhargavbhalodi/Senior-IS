@@ -10,6 +10,7 @@
 # device.
 import numpy as np
 import cv2
+import platform
 
 class CamObj:
 
@@ -40,22 +41,31 @@ class CamObj:
         # if video data needs to be returned, set needRet to be True and
         # filename should be provided in the form of fname.avi
         begin_cap = cv2.VideoCapture(cam_index)
-        face_detector = cv2.CascadeClassifier(
+        if platform.system() == 'Darwin':
+            face_detector = cv2.CascadeClassifier(
+                '/Library/Frameworks/Python.framework/Versions/3.7/lib/'
+                'python3.7/site-packages/cv2/data/'
+                'haarcascade_frontalface_default.xml')
+        else:
+            face_detector = cv2.CascadeClassifier(
             'C:\Python3\Lib\site-packages\cv2\data'
             '\haarcascade_frontalface_default.xml')
         if need_ret:
-            vid_writer = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+            if platform.system() == 'Darwin':
+                vid_writer = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+            else:
+                vid_writer = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
             output_destination = cv2.VideoWriter(filename, vid_writer,
                                                 60.0, (640, 480))
         while True:
             check, frames = begin_cap.read()
             grayscale_frame = cv2.cvtColor(frames, cv2.COLOR_BGR2GRAY)
-            face_coords = np.uint8(face_detector.detectMultiScale(
-                frames, 1.1, 3))
+            face_coords = face_detector.detectMultiScale(
+                grayscale_frame, 1.1, 3)
             detected_frame = self.detectFace(frames, face_coords)
             if show:
                 cv2.imshow('frame', detected_frame)
-                #cv2.imshow('grayscale_frame', grayscale_frame)
+                # cv2.imshow('grayscale_frame', grayscale_frame)
             if need_ret:
                 output_destination.write(detected_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -68,4 +78,8 @@ class CamObj:
 
 
 myCam = CamObj()
-myCam.initializeVideoData(0, show=True, need_ret=True, filename='trial.avi')
+if platform.system() == 'Darwin':
+    fname = 'trial.mov'
+else:
+    fname = 'trial.avi'
+myCam.initializeVideoData(0, show=True, need_ret=True, filename=fname)
