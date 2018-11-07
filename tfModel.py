@@ -10,9 +10,12 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 
-cifar10_dataset = keras.datasets.fashion_mnist
+mnist_dataset = keras.datasets.fashion_mnist
 
-(img_train, lab_train), (img_test, lab_test) = cifar10_dataset.load_data()
+(img_train, lab_train), (img_test, lab_test) = mnist_dataset.load_data()
+
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
 img_train = img_train/255.0
 img_test = img_test/255.0
@@ -20,13 +23,15 @@ img_test = img_test/255.0
 plt.figure(figsize=(10,10))
 
 for i in range(25):
+    # print("attempting to display ... ", i)
     plt.subplot(5,5,i+1)
     plt.xticks([])
     plt.yticks([])
     plt.grid(False)
     plt.imshow(img_train[i], cmap=plt.cm.binary)
-    plt.xlabel(lab_train[i])
+    plt.xlabel(class_names[lab_train[i]])
 
+plt.show()
 
 model = keras.Sequential([
     keras.layers.Flatten(input_shape=(28, 28)),
@@ -64,7 +69,7 @@ def plot_image(i, predictions_array, true_label, img):
 
     plt.xlabel("{} {:2.0f}% ({})".format(predicted_label,
                                          100 * np.max(predictions_array),
-                                         true_label),
+                                         class_names[true_label]),
                color=color)
 
 
@@ -86,7 +91,11 @@ num_cols = 3
 num_images = num_rows*num_cols
 plt.figure(figsize=(2*2*num_cols, 2*num_rows))
 for i in range(num_images):
+  #print("trying to plot")
   plt.subplot(num_rows, 2*num_cols, 2*i+1)
   plot_image(i, predictions, lab_test, img_test)
   plt.subplot(num_rows, 2*num_cols, 2*i+2)
   plot_value_array(i, predictions, lab_test)
+
+
+plt.show()
