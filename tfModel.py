@@ -5,17 +5,22 @@
 # information given at
 # https://www.tensorflow.org/tutorials/keras/basic_classification
 
+# Help and code taken from
+# Rajalingappaa Shanmugamani. Deep Learning for Computer Vision: Expert
+# techniques to train advanced neural networks using TensorFlow and Keras.
+# Packt Publishing - ebooks Account, Birmingham Mumbai, January 2018.
+
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 
-mnist_dataset = keras.datasets.fashion_mnist
 
-(img_train, lab_train), (img_test, lab_test) = mnist_dataset.load_data()
+cifar100_dataset = keras.datasets.fashion_mnist
 
-class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+(img_train, lab_train), (img_test, lab_test) = cifar100_dataset.load_data()
+
+# class_names = lab_train
 
 img_train = img_train/255.0
 img_test = img_test/255.0
@@ -29,27 +34,107 @@ for i in range(25):
     plt.yticks([])
     plt.grid(False)
     plt.imshow(img_train[i], cmap=plt.cm.binary)
-    plt.xlabel(class_names[lab_train[i]])
-
+    # plt.xlabel(class_names[lab_train[i]])
+    plt.xlabel(lab_train[i])
 plt.show()
 
-model = keras.Sequential([
-    keras.layers.Flatten(input_shape=(28, 28)),
-    keras.layers.Dense(128, activation=tf.nn.relu),
-    keras.layers.Dense(10, activation=tf.nn.softmax)
-])
 
-model.compile(optimizer=tf.train.AdamOptimizer(),
+# defines a pooling layer
+def pooling_layer(input_layer, pool_size=[2, 2], strides=2, padding='valid'):
+    layer = tf.layers.max_pooling2d(
+        inputs=input_layer,
+        pool_size=pool_size,
+        strides=strides,
+        padding=padding
+    )
+    # add_variable_summary(layer, 'pooling')
+    return layer
+
+# defines a convolution layer
+def convolution_layer(input_layer, filters, kernel_size=[3, 3], padding='valid',
+                      activation=tf.nn.leaky_relu):
+    layer = tf.layers.conv2d(
+        inputs=input_layer,
+        filters=filters,
+        kernel_size=kernel_size,
+        activation=activation,
+        padding=padding,
+        # weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+        # weights_regularizer=tf.contrib.layers.l2_regularizer(0.0005)
+    )
+    # add_variable_summary(layer, 'convolution')
+    return layer
+
+# defines a dense layer
+def dense_layer(input_layer, units, activation=tf.nn.leaky_relu):
+    layer = tf.layers.dense(
+        inputs=input_layer,
+        units=units,
+        activation=activation,
+        weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+        weights_regularizer=tf.contrib.layers.l2_regularizer(0.0005)
+    )
+    # add_variable_summary(layer, 'dense')
+    return layer
+
+
+# defines the YOLO model
+#yolo = tf.pad(img_train, np.array([[0, 0], [3, 3], [3,3], [0, 0]]),
+#              name='pad_1')
+yolo = convolution_layer(img_train, 64, 7, 2)
+yolo = pooling_layer(yolo, [2, 2], 2, 'same')
+yolo = convolution_layer(yolo, 192, 3)
+yolo = pooling_layer(yolo, 2, 'same')
+yolo = convolution_layer(yolo, 128, 1)
+yolo = convolution_layer(yolo, 256, 3)
+yolo = convolution_layer(yolo, 256, 1)
+yolo = convolution_layer(yolo, 512, 3)
+yolo = pooling_layer(yolo, 2, 'same')
+yolo = convolution_layer(yolo, 256, 1)
+yolo = convolution_layer(yolo, 512, 3)
+yolo = convolution_layer(yolo, 256, 1)
+yolo = convolution_layer(yolo, 512, 3)
+yolo = convolution_layer(yolo, 256, 1)
+yolo = convolution_layer(yolo, 512, 3)
+yolo = convolution_layer(yolo, 256, 1)
+yolo = convolution_layer(yolo, 512, 3)
+yolo = convolution_layer(yolo, 512, 1)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = pooling_layer(yolo, 2)
+yolo = convolution_layer(yolo, 512, 1)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = convolution_layer(yolo, 512, 1)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = tf.pad(yolo, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]))
+yolo = convolution_layer(yolo, 1024, 3, 2)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = convolution_layer(yolo, 1024, 3)
+yolo = tf.transpose(yolo, [0, 3, 1, 2])
+yolo = tf.layers.flatten(yolo)
+yolo = dense_layer(yolo, 512)
+yolo = dense_layer(yolo, 4096)
+
+dropout_bool = tf.placeholder(tf.bool)
+yolo = tf.layers.dropout(
+        inputs=yolo,
+        rate=0.4,
+        training=dropout_bool
+    )
+yolo = dense_layer(yolo, 10, None)
+
+
+yolo.compile(optimizer=tf.train.AdamOptimizer(),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(img_train, lab_train, epochs=5)
+yolo.fit(img_train, lab_train, epochs=5)
 
-test_loss, test_acc = model.evaluate(img_test, lab_test)
+test_loss, test_acc = yolo.evaluate(img_test, lab_test)
 
 print('Test accuracy:', test_acc)
 
-predictions = model.predict(img_test)
+predictions = yolo.predict(img_test)
 
 
 def plot_image(i, predictions_array, true_label, img):
