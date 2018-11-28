@@ -16,11 +16,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+
 cifar100_dataset = keras.datasets.fashion_mnist
 
 (img_train, lab_train), (img_test, lab_test) = cifar100_dataset.load_data()
 
-# class_names = lab_train
+class_names = lab_train
 
 img_train = img_train/255.0
 img_test = img_test/255.0
@@ -38,105 +39,98 @@ for i in range(25):
     plt.xlabel(lab_train[i])
 plt.show()
 
+print("\n\n", img_train.shape)
+input_shape = img_train.shape
+num_outputs = 10
 
-# defines a pooling layer
-def pooling_layer(input_layer, pool_size=[2, 2], strides=2, padding='valid'):
-    layer = tf.layers.max_pooling2d(
-        inputs=input_layer,
-        pool_size=pool_size,
-        strides=strides,
-        padding=padding
-    )
-    # add_variable_summary(layer, 'pooling')
-    return layer
+# defining the YOLO model
+#model = keras.Sequential([
+#    keras.layers.Conv2D(input_shape=(28, 28, 3), filters=64,
+#                        kernel_size=7,
+#                        strides=2,
+#                        padding="same"),
+#    keras.layers.LeakyReLU(),
+#    keras.layers.MaxPooling2D(pool_size=(2,2), strides=2, padding="same")
+#])
 
-# defines a convolution layer
-def convolution_layer(input_layer, filters, kernel_size=[3, 3], padding='valid',
-                      activation=tf.nn.leaky_relu):
-    layer = tf.layers.conv2d(
-        inputs=input_layer,
-        filters=filters,
-        kernel_size=kernel_size,
-        activation=activation,
-        padding=padding,
-        # weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
-        # weights_regularizer=tf.contrib.layers.l2_regularizer(0.0005)
-    )
-    # add_variable_summary(layer, 'convolution')
-    return layer
+#model.add(keras.layers.Conv2D(filters=192, kernel_size=3))
+#model.add(keras.layers.LeakyReLU())
+#model.add(keras.layers.MaxPooling2D(pool_size=(2,2), strides=2,
+# padding="same"))
 
-# defines a dense layer
-def dense_layer(input_layer, units, activation=tf.nn.leaky_relu):
-    layer = tf.layers.dense(
-        inputs=input_layer,
-        units=units,
-        activation=activation,
-        weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
-        weights_regularizer=tf.contrib.layers.l2_regularizer(0.0005)
-    )
-    # add_variable_summary(layer, 'dense')
-    return layer
-
-
-# defines the YOLO model
-#yolo = tf.pad(img_train, np.array([[0, 0], [3, 3], [3,3], [0, 0]]),
-#              name='pad_1')
-yolo = convolution_layer(img_train, 64, 7, 2)
-yolo = pooling_layer(yolo, [2, 2], 2, 'same')
-yolo = convolution_layer(yolo, 192, 3)
-yolo = pooling_layer(yolo, 2, 'same')
-yolo = convolution_layer(yolo, 128, 1)
-yolo = convolution_layer(yolo, 256, 3)
-yolo = convolution_layer(yolo, 256, 1)
-yolo = convolution_layer(yolo, 512, 3)
-yolo = pooling_layer(yolo, 2, 'same')
-yolo = convolution_layer(yolo, 256, 1)
-yolo = convolution_layer(yolo, 512, 3)
-yolo = convolution_layer(yolo, 256, 1)
-yolo = convolution_layer(yolo, 512, 3)
-yolo = convolution_layer(yolo, 256, 1)
-yolo = convolution_layer(yolo, 512, 3)
-yolo = convolution_layer(yolo, 256, 1)
-yolo = convolution_layer(yolo, 512, 3)
-yolo = convolution_layer(yolo, 512, 1)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = pooling_layer(yolo, 2)
-yolo = convolution_layer(yolo, 512, 1)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = convolution_layer(yolo, 512, 1)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = tf.pad(yolo, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]))
-yolo = convolution_layer(yolo, 1024, 3, 2)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = convolution_layer(yolo, 1024, 3)
-yolo = tf.transpose(yolo, [0, 3, 1, 2])
-yolo = tf.layers.flatten(yolo)
-yolo = dense_layer(yolo, 512)
-yolo = dense_layer(yolo, 4096)
-
-dropout_bool = tf.placeholder(tf.bool)
-yolo = tf.layers.dropout(
-        inputs=yolo,
-        rate=0.4,
-        training=dropout_bool
-    )
-yolo = dense_layer(yolo, 10, None)
+# model.add(keras.layers.Conv2D(filters=128, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=3))
+# model.add(keras.layers.MaxPooling2D(pool_size=(2,2), strides=2, padding="same"))
+#
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=256, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.MaxPooling2D(pool_size=(2,2), strides=2))
+#
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=512, kernel_size=1))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3, strides=2, padding="same"))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
+# model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
+# model.add(keras.layers.LeakyReLU())
 
 
-yolo.compile(optimizer=tf.train.AdamOptimizer(),
+model = keras.Sequential()
+model.add(keras.layers.Flatten())
+model.add(keras.layers.Dense(units=512))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Dense(units=4096))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Dropout(rate=0.4))
+model.add(keras.layers.Dense(units=num_outputs))
+
+# compiles the model
+model.compile(optimizer=tf.train.AdamOptimizer(),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-yolo.fit(img_train, lab_train, epochs=5)
+# fits the model to training data
+model.fit(img_train, lab_train, epochs=1)
 
-test_loss, test_acc = yolo.evaluate(img_test, lab_test)
-
+# evaluates the model against test data
+test_loss, test_acc = model.evaluate(img_test, lab_test)
 print('Test accuracy:', test_acc)
+predictions = model.predict(img_test)
 
-predictions = yolo.predict(img_test)
 
-
+# plots examples from test data and their respective predictions
 def plot_image(i, predictions_array, true_label, img):
     predictions_array, true_label, img = predictions_array[i], true_label[i], \
                                          img[i]
