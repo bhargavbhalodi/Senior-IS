@@ -108,13 +108,13 @@ num_outputs = 10
 
 
 model = keras.Sequential()
-model.add(keras.layers.Flatten())
+model.add(keras.layers.Flatten(input_shape=(28,28)))
 model.add(keras.layers.Dense(units=512))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Dense(units=4096))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Dropout(rate=0.4))
-model.add(keras.layers.Dense(units=num_outputs))
+model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
 
 # compiles the model
 model.compile(optimizer=tf.train.AdamOptimizer(),
