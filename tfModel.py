@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 
 
-cifar100_dataset = keras.datasets.fashion_mnist
+cifar100_dataset = keras.datasets.cifar10
 
 (img_train, lab_train), (img_test, lab_test) = cifar100_dataset.load_data()
 
@@ -40,7 +40,8 @@ for i in range(25):
 plt.show()
 
 print("\n\n", img_train.shape)
-input_shape = img_train.shape
+# input_shape = img_train.shape
+print("\n", lab_train.shape, "\n")
 num_outputs = 10
 
 # defining the YOLO model
@@ -106,14 +107,18 @@ num_outputs = 10
 # model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
 # model.add(keras.layers.LeakyReLU())
 
-
+input_shape = img_train.shape[1:]
 model = keras.Sequential()
-model.add(keras.layers.Flatten(input_shape=(28,28)))
+model.add(keras.layers.Conv2D(input_shape=input_shape,
+                              filters=64,
+                              kernel_size=3, strides=2, padding="same"))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Flatten())
 model.add(keras.layers.Dense(units=512))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Dense(units=4096))
 model.add(keras.layers.LeakyReLU())
-model.add(keras.layers.Dropout(rate=0.4))
+model.add(keras.layers.Dropout(rate=0.2))
 model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
 
 # compiles the model
@@ -122,7 +127,9 @@ model.compile(optimizer=tf.train.AdamOptimizer(),
               metrics=['accuracy'])
 
 # fits the model to training data
-model.fit(img_train, lab_train, epochs=1)
+print(img_train)
+model.fit(img_train, lab_train,
+          epochs=1)
 
 # evaluates the model against test data
 test_loss, test_acc = model.evaluate(img_test, lab_test)
