@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+# loads the dataset and gets it ready to use ----------------------------------
 
 cifar100_dataset = keras.datasets.cifar10
 
@@ -25,6 +26,10 @@ class_names = lab_train
 
 img_train = img_train/255.0
 img_test = img_test/255.0
+
+num_outputs = 10
+
+# plots the training data -----------------------------------------------------
 
 plt.figure(figsize=(10,10))
 
@@ -39,10 +44,9 @@ for i in range(25):
     plt.xlabel(lab_train[i])
 plt.show()
 
-print("\n\n", img_train.shape)
+#print("\n\n", img_train.shape)
 # input_shape = img_train.shape
-print("\n", lab_train.shape, "\n")
-num_outputs = 10
+#print("\n", lab_train.shape, "\n")
 
 # defining the YOLO model
 #model = keras.Sequential([
@@ -107,6 +111,9 @@ num_outputs = 10
 # model.add(keras.layers.Conv2D(filters=1024, kernel_size=3))
 # model.add(keras.layers.LeakyReLU())
 
+
+# defines the neural network model --------------------------------------------
+
 input_shape = img_train.shape[1:]
 model = keras.Sequential()
 model.add(keras.layers.Conv2D(input_shape=input_shape,
@@ -121,23 +128,27 @@ model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Dropout(rate=0.2))
 model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
 
-# compiles the model
+# compiles the model ----------------------------------------------------------
+
 model.compile(optimizer=tf.train.AdamOptimizer(),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-# fits the model to training data
+# fits the model to training data ---------------------------------------------
+
 print(img_train)
 model.fit(img_train, lab_train,
           epochs=1)
 
-# evaluates the model against test data
+# evaluates the model against test data ---------------------------------------
+
 test_loss, test_acc = model.evaluate(img_test, lab_test)
 print('Test accuracy:', test_acc)
 predictions = model.predict(img_test)
 
 
-# plots examples from test data and their respective predictions
+# plots examples from test data and their respective predictions --------------
+
 def plot_image(i, predictions_array, true_label, img):
     predictions_array, true_label, img = predictions_array[i], true_label[i], \
                                          img[i]
@@ -177,11 +188,11 @@ num_cols = 3
 num_images = num_rows*num_cols
 plt.figure(figsize=(2*2*num_cols, 2*num_rows))
 for i in range(num_images):
-  #print("trying to plot")
+  # print("trying to plot")
   plt.subplot(num_rows, 2*num_cols, 2*i+1)
   plot_image(i, predictions, lab_test, img_test)
   plt.subplot(num_rows, 2*num_cols, 2*i+2)
-  plot_value_array(i, predictions, lab_test)
+  # plot_value_array(i, predictions, lab_test)
 
 
 plt.show()
