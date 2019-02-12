@@ -48,9 +48,10 @@ def main():
     change_model = str(input("Would you like to switch to a different model? "
                              "(Y/N): "))
     if change_model == "Y":
-        prototxt_filename = str(input("Please input the prototxt filename: "))
-        model_filename = str(input("Please input the Caffe model filename: "))
-        detector.set_detector_model(prototxt_filename, model_filename)
+        config_filename = str(input("Please input the configuration "
+                                      "filename: "))
+        model_filename = str(input("Please input the model filename: "))
+        detector.set_detector_model(config_filename, model_filename)
         display_model_info(detector)
 
     # starts the video stream
@@ -94,9 +95,9 @@ def main():
 
 def display_model_info(detector_object):
     print("===> Displaying current model information:")
-    print("         Model prototxt filename: ",
-          detector_object.detector_prototxt_file)
-    print("         Model caffemodel filename: ",
+    print("         Model configuration filename: ",
+          detector_object.detector_config_file)
+    print("         Model filename: ",
           detector_object.detector_model_file)
     print("===> Detection possibilities for chosen model:")
     for i in detector_object.class_list:
@@ -106,21 +107,27 @@ def display_model_info(detector_object):
 # Real time object detector class definition
 # Initializes to bvlc_googlenet object detection model
 class RealTimeDetector:
-
     # initializes variables for real time object detector
     # defaults to bvlc_googlenet model
     def __init__(self):
-        self.detector_prototxt_file = "MobileNetSSD_deploy.prototxt.txt"
+        self.detector_config_file = "MobileNetSSD_deploy.prototxt.txt"
         self.detector_model_file = "MobileNetSSD_deploy.caffemodel"
         self.detector = cv2.dnn.readNetFromCaffe(
-            self.detector_prototxt_file, self.detector_model_file)
+            self.detector_config_file, self.detector_model_file)
         self.class_list = self.update_class_list(self.detector_model_file)
 
     # changes detector model based on given model information
-    def set_detector_model(self, prototxt_filename, model_filename):
-        self.detector_prototxt_file = prototxt_filename
+    def set_detector_model(self, config_filename, model_filename):
+        self.detector_config_file = config_filename
         self.detector_model_file = model_filename
-        self.detector = cv2.dnn.readNetFromCaffe(prototxt_filename,
+
+        # Darknet model setup
+        if config_filename[-3:] == "cfg":
+            self.detector = cv2.dnn.readNetFromDarknet(config_filename,
+                                                       model_filename)
+        # Caffe model setup
+        else:
+            self.detector = cv2.dnn.readNetFromCaffe(config_filename,
                                                  model_filename)
         self.class_list = self.update_class_list(model_filename)
 
@@ -131,11 +138,14 @@ class RealTimeDetector:
                     "bottle", "bus", "car", "cat", "chair", "cow",
                     "diningtable", "dog", "horse", "motorbike", "person",
                     "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
-        else:
+        elif model_filename == "bvlc_googlenet.caffemodel":
             googlenet_classes_filename = "synset_words.txt"
             row_split = open(googlenet_classes_filename).read().strip().split(
                 "\n")
             return [row[row.find(" ") + 1:].split(",")[0] for row in row_split]
+        elif model_filename == "yolov3.weights":
+            yolov3_classes_filename = "coco.names"
+            return open(yolov3_classes_filename).read().strip().split("\n")
 
     # returns blob from image with parameters depending on the model in use
     def get_blob(self, video_frame):
@@ -147,7 +157,12 @@ class RealTimeDetector:
                                                (104, 117, 123))
         if model_filename == "MobileNetSSD_deploy.caffemodel":
             frame_blob = cv2.dnn.blobFromImage(cv2.resize(video_frame, (300,
-             300)), 0.007843, (300, 300), 127.5)
+                                                                        300)),
+                                               0.007843, (300, 300), 127.5)
+        if model_filename == "yolov3.weights":
+            frame_blob = cv2.dnn.blobFromImage(video_frame, 1 / 255.0,
+                                               (416, 416), swapRB=True,
+                                               crop=False)
 
         return frame_blob
 

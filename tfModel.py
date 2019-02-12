@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 
 # loads the dataset and gets it ready to use ----------------------------------
 
-cifar100_dataset = keras.datasets.cifar10
+cifar10_dataset = keras.datasets.cifar10
 
-(img_train, lab_train), (img_test, lab_test) = cifar100_dataset.load_data()
+(img_train, lab_train), (img_test, lab_test) = cifar10_dataset.load_data()
 
 class_names = lab_train
 
@@ -43,6 +43,9 @@ for i in range(25):
     # plt.xlabel(class_names[lab_train[i]])
     plt.xlabel(lab_train[i])
 plt.show()
+
+lab_train = keras.utils.to_categorical(lab_train, num_outputs)
+lab_test = keras.utils.to_categorical(lab_test, num_outputs)
 
 #print("\n\n", img_train.shape)
 # input_shape = img_train.shape
@@ -117,26 +120,34 @@ plt.show()
 input_shape = img_train.shape[1:]
 model = keras.Sequential()
 model.add(keras.layers.Conv2D(input_shape=input_shape,
-                              filters=64,
-                              kernel_size=3, strides=2, padding="same"))
+                              filters=32,
+                              kernel_size=3, padding="same"))
 model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Conv2D(filters=32, kernel_size=3))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
+model.add(keras.layers.Dropout(rate=0.25))
+
+model.add(keras.layers.Conv2D(filters=64, kernel_size=3, padding="same"))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Conv2D(filters=64, kernel_size=3))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
+model.add(keras.layers.Dropout(rate=0.25))
+
 model.add(keras.layers.Flatten())
 model.add(keras.layers.Dense(units=512))
 model.add(keras.layers.LeakyReLU())
-model.add(keras.layers.Dense(units=4096))
-model.add(keras.layers.LeakyReLU())
-model.add(keras.layers.Dropout(rate=0.2))
+model.add(keras.layers.Dropout(rate=0.5))
 model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
 
 # compiles the model ----------------------------------------------------------
 
 model.compile(optimizer=tf.train.AdamOptimizer(),
-              loss='sparse_categorical_crossentropy',
+              loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # fits the model to training data ---------------------------------------------
-
-print(img_train)
 model.fit(img_train, lab_train,
           epochs=1)
 
