@@ -44,12 +44,13 @@ for i in range(25):
     plt.xlabel(lab_train[i])
 plt.show()
 
-lab_train = keras.utils.to_categorical(lab_train, num_outputs)
-lab_test = keras.utils.to_categorical(lab_test, num_outputs)
+print(lab_train[0])
 
-#print("\n\n", img_train.shape)
-# input_shape = img_train.shape
-#print("\n", lab_train.shape, "\n")
+#lab_train = keras.utils.to_categorical(lab_train, num_outputs)
+#lab_test = keras.utils.to_categorical(lab_test, num_outputs)
+
+print(lab_train[0])
+print(img_train.shape)
 
 # defining the YOLO model
 #model = keras.Sequential([
@@ -121,22 +122,29 @@ input_shape = img_train.shape[1:]
 model = keras.Sequential()
 model.add(keras.layers.Conv2D(input_shape=input_shape,
                               filters=32,
-                              kernel_size=3, padding="same"))
+                              kernel_size=(3,3), strides=4, padding="same"))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Conv2D(filters=32, kernel_size=3))
 model.add(keras.layers.LeakyReLU())
-model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
+#model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
 model.add(keras.layers.Dropout(rate=0.25))
 
 model.add(keras.layers.Conv2D(filters=64, kernel_size=3, padding="same"))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Conv2D(filters=64, kernel_size=3))
 model.add(keras.layers.LeakyReLU())
-model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
+#model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
+model.add(keras.layers.Dropout(rate=0.25))
+
+model.add(keras.layers.Conv2D(filters=128, kernel_size=3, padding="same"))
+model.add(keras.layers.LeakyReLU())
+model.add(keras.layers.Conv2D(filters=256, kernel_size=3))
+model.add(keras.layers.LeakyReLU())
+#model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
 model.add(keras.layers.Dropout(rate=0.25))
 
 model.add(keras.layers.Flatten())
-model.add(keras.layers.Dense(units=512))
+model.add(keras.layers.Dense(units=1024))
 model.add(keras.layers.LeakyReLU())
 model.add(keras.layers.Dropout(rate=0.5))
 model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
@@ -144,7 +152,7 @@ model.add(keras.layers.Dense(units=num_outputs, activation=tf.nn.softmax))
 # compiles the model ----------------------------------------------------------
 
 model.compile(optimizer=tf.train.AdamOptimizer(),
-              loss='categorical_crossentropy',
+              loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
 # fits the model to training data ---------------------------------------------
@@ -190,9 +198,10 @@ def plot_value_array(i, predictions_array, true_label):
     plt.ylim([0, 1])
     predicted_label = np.argmax(predictions_array)
 
+    #print(type(predictions_array))
+    #print((true_label))
     thisplot[predicted_label].set_color('red')
-    thisplot[true_label].set_color('blue')
-
+    thisplot[true_label[0]].set_color('blue')
 
 num_rows = 5
 num_cols = 3
@@ -203,7 +212,7 @@ for i in range(num_images):
   plt.subplot(num_rows, 2*num_cols, 2*i+1)
   plot_image(i, predictions, lab_test, img_test)
   plt.subplot(num_rows, 2*num_cols, 2*i+2)
-  # plot_value_array(i, predictions, lab_test)
+  plot_value_array(i, predictions, lab_test)
 
 
 plt.show()
